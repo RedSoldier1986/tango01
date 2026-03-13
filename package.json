@@ -1,0 +1,15 @@
+{
+  "name": "tango01-lista-espera",
+  "version": "1.0.0",
+  "description": "Lista de espera satírica para el Tango 01 — Costo Marginal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.3"
+  }
+}
