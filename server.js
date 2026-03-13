@@ -170,6 +170,22 @@ app.get('/api/admin/export-csv', async (req, res) => {
   }
 });
 
+// DELETE /api/admin/borrar/:id
+app.delete('/api/admin/borrar/:id', async (req, res) => {
+  if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY)
+    return res.status(401).json({ error: 'Acceso denegado.' });
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+  try {
+    const { rowCount } = await pool.query('DELETE FROM inscriptos WHERE id = $1', [id]);
+    if (rowCount === 0) return res.status(404).json({ error: 'No encontrado.' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al borrar.' });
+  }
+});
+
 // GET /admin — panel web
 app.get('/admin', (req, res) => {
   res.send(`<!DOCTYPE html>
@@ -203,6 +219,8 @@ app.get('/admin', (req, res) => {
   .btn-logout:hover { color:#fff; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   th { text-align:left; padding:10px 12px; background:#111; color:rgba(255,255,255,0.4); font-size:10px; letter-spacing:2px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .btn-del { background:transparent; border:1px solid rgba(255,80,80,0.3); color:rgba(255,80,80,0.5); padding:4px 10px; font-family:monospace; font-size:11px; cursor:pointer; border-radius:2px; }
+  .btn-del:hover { background:rgba(255,80,80,0.1); border-color:#ff5050; color:#ff5050; }
   td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.05); vertical-align:top; }
   tr:hover td { background:rgba(116,172,223,0.04); }
   .id-col { color:rgba(255,255,255,0.2); }
@@ -246,7 +264,7 @@ app.get('/admin', (req, res) => {
   <table id="tabla">
     <thead>
       <tr>
-        <th>#</th><th>NOMBRE</th><th>EMAIL</th><th>DESTINO</th><th>RELACIÓN</th><th>BUTACA</th><th>FECHA</th>
+        <th>#</th><th>NOMBRE</th><th>EMAIL</th><th>DESTINO</th><th>RELACIÓN</th><th>BUTACA</th><th>FECHA</th><th></th>
       </tr>
     </thead>
     <tbody id="tabla-body"></tbody>
@@ -304,7 +322,7 @@ app.get('/admin', (req, res) => {
     document.getElementById('no-results').style.display = data.length === 0 ? 'block' : 'none';
     data.forEach(r => {
       const tr = document.createElement('tr');
-      tr.innerHTML = \`<td class="id-col">\${r.id}</td><td>\${esc(r.nombre)}</td><td class="email-col">\${esc(r.email)}</td><td>\${esc(r.destino||'—')}</td><td>\${esc(r.motivo||'—')}</td><td class="butaca-col">\${esc(r.butaca)}</td><td class="fecha-col">\${esc(r.fecha)}</td>\`;
+      tr.innerHTML = \`<td class="id-col">\${r.id}</td><td>\${esc(r.nombre)}</td><td class="email-col">\${esc(r.email)}</td><td>\${esc(r.destino||'—')}</td><td>\${esc(r.motivo||'—')}</td><td class="butaca-col">\${esc(r.butaca)}</td><td class="fecha-col">\${esc(r.fecha)}</td><td><button class="btn-del" onclick="borrar(\${r.id}, '\${esc(r.nombre)}')">✕ BORRAR</button></td>\`;
       tbody.appendChild(tr);
     });
   }
@@ -317,6 +335,21 @@ app.get('/admin', (req, res) => {
       (r.destino||'').toLowerCase().includes(q) ||
       (r.motivo||'').toLowerCase().includes(q)
     ));
+  }
+
+  function borrar(id, nombre) {
+    if (!confirm('¿Borrar a ' + nombre + '? Esta acción no se puede deshacer.')) return;
+    fetch('/api/admin/borrar/' + id, {
+      method: 'DELETE',
+      headers: { 'x-admin-key': currentKey }
+    })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(() => {
+      allRows = allRows.filter(r => r.id !== id);
+      renderStats(allRows);
+      renderTable(allRows);
+    })
+    .catch(() => alert('Error al borrar. Intentá de nuevo.'));
   }
 
   function esc(t) {
