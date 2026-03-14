@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Tango 01</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0a0a0a; color:#fff; font-family:monospace; min-height:100vh; }
+.login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+.login-box { background:#111; border:1px solid rgba(116,172,223,0.3); padding:40px; max-width:360px; width:100%; }
+.login-box h1 { font-size:22px; letter-spacing:3px; color:#74ACDF; margin-bottom:6px; }
+.login-box p { font-size:12px; color:rgba(255,255,255,0.3); margin-bottom:24px; }
+input[type=password] { width:100%; background:#1e1e1e; border:1px solid rgba(255,255,255,0.1); padding:12px; color:#fff; font-size:16px; font-family:monospace; outline:none; margin-bottom:12px; }
+input[type=password]:focus { border-color:#74ACDF; }
+.btn-login { width:100%; background:#F6B40E; color:#000; border:none; padding:14px; font-size:16px; font-family:monospace; font-weight:bold; letter-spacing:2px; cursor:pointer; }
+.btn-login:hover { background:#ffc82e; }
+.error { color:#ff6b6b; font-size:12px; margin-bottom:12px; display:none; }
+.panel { padding:30px 20px; max-width:1200px; margin:0 auto; }
+.panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+.panel-header h1 { font-size:20px; letter-spacing:3px; color:#74ACDF; }
+.stats { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+.stat-box { background:#111; border:1px solid rgba(116,172,223,0.2); padding:16px 24px; }
+.stat-num { font-size:36px; color:#74ACDF; font-weight:bold; }
+.stat-label { font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:2px; margin-top:2px; }
+.btn-csv { background:#111; color:#F6B40E; border:1px solid #F6B40E; padding:10px 20px; font-family:monospace; font-size:13px; letter-spacing:1px; cursor:pointer; text-decoration:none; display:inline-block; }
+.btn-csv:hover { background:#F6B40E; color:#000; }
+.btn-logout { background:transparent; color:rgba(255,255,255,0.3); border:1px solid rgba(255,255,255,0.1); padding:10px 16px; font-family:monospace; font-size:12px; cursor:pointer; }
+.btn-logout:hover { color:#fff; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { text-align:left; padding:10px 12px; background:#111; color:rgba(255,255,255,0.4); font-size:10px; letter-spacing:2px; border-bottom:1px solid rgba(255,255,255,0.07); }
+td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.05); vertical-align:middle; }
+tr:hover td { background:rgba(116,172,223,0.04); }
+.id-col { color:rgba(255,255,255,0.2); }
+.email-col { color:#74ACDF; }
+.butaca-col { color:#F6B40E; }
+.fecha-col { color:rgba(255,255,255,0.3); font-size:11px; }
+.btn-del { background:transparent; border:1px solid rgba(255,80,80,0.3); color:rgba(255,80,80,0.5); padding:4px 8px; font-family:monospace; font-size:11px; cursor:pointer; }
+.btn-del:hover { background:rgba(255,80,80,0.1); border-color:#ff5050; color:#ff5050; }
+.btn-ticket { background:transparent; border:1px solid rgba(246,180,14,0.4); color:rgba(246,180,14,0.7); padding:4px 8px; font-family:monospace; font-size:11px; cursor:pointer; margin-right:4px; }
+.btn-ticket:hover { background:rgba(246,180,14,0.1); border-color:#F6B40E; color:#F6B40E; }
+.search-bar { width:100%; background:#111; border:1px solid rgba(255,255,255,0.1); padding:10px 14px; color:#fff; font-family:monospace; font-size:14px; outline:none; margin-bottom:16px; }
+.search-bar:focus { border-color:#74ACDF; }
+.no-results { padding:30px; text-align:center; color:rgba(255,255,255,0.2); }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.show { display:flex; }
+.modal-box { background:#111; border:1px solid rgba(255,255,255,0.15); padding:24px; max-width:540px; width:100%; position:relative; max-height:90vh; overflow-y:auto; }
+.modal-close { position:absolute; top:10px; right:14px; background:transparent; border:none; color:rgba(255,255,255,0.4); font-size:22px; cursor:pointer; }
+.modal-close:hover { color:#fff; }
+.modal-actions { display:flex; gap:10px; margin-top:16px; justify-content:center; }
+.btn-print { background:#F6B40E; color:#000; border:none; padding:10px 28px; font-family:monospace; font-size:14px; font-weight:bold; letter-spacing:2px; cursor:pointer; }
+.btn-print:hover { background:#ffc82e; }
+#ticket-wrap { background:#fff; color:#000; font-family:"Courier New",monospace; width:100%; }
+.tk-header { background:#1a1a2e; color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+.tk-airline { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,0.5); }
+.tk-logo { font-size:20px; font-weight:900; letter-spacing:2px; }
+.tk-route { background:#74ACDF; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; }
+.tk-city { text-align:center; }
+.tk-iata { font-size:30px; font-weight:900; color:#fff; letter-spacing:1px; line-height:1; }
+.tk-cityname { font-size:9px; color:rgba(255,255,255,0.75); letter-spacing:2px; margin-top:2px; }
+.tk-arrow { font-size:24px; color:rgba(255,255,255,0.6); }
+.tk-seat-big { background:#F6B40E; color:#000; font-size:26px; font-weight:900; padding:4px 12px; letter-spacing:1px; }
+.tk-body { padding:14px 18px; background:#fff; }
+.tk-row { display:flex; border-bottom:1px dashed #ddd; padding:7px 0; }
+.tk-row:last-child { border-bottom:none; }
+.tk-field { flex:1; }
+.tk-label { font-size:8px; letter-spacing:2px; color:#999; text-transform:uppercase; margin-bottom:2px; }
+.tk-value { font-size:14px; font-weight:700; color:#1a1a2e; }
+.tk-divider { border:none; border-top:2px dashed #bbb; margin:0; }
+.tk-footer { background:#f5f5f5; padding:10px 18px; display:flex; align-items:center; justify-content:space-between; }
+.tk-barcode { font-size:28px; letter-spacing:-2px; color:#1a1a2e; font-weight:900; }
+.tk-disclaimer { font-size:8px; color:#aaa; max-width:180px; text-align:right; line-height:1.4; }
+.tk-stamp { display:inline-block; border:3px solid #74ACDF; color:#74ACDF; font-size:9px; letter-spacing:3px; padding:3px 8px; transform:rotate(-8deg); font-weight:900; }
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="login-section">
+  <div class="login-box">
+    <h1>TANGO 01</h1>
+    <p>Panel de administracion - ingresa tu clave</p>
+    <div class="error" id="login-error">Clave incorrecta.</div>
+    <input type="password" id="admin-key-input" placeholder="Clave admin" />
+    <button class="btn-login" id="btn-login">INGRESAR</button>
+  </div>
+</div>
+
+<div class="panel" id="panel-section" style="display:none">
+  <div class="panel-header">
+    <h1>PANEL ADMIN - TANGO 01</h1>
+    <div style="display:flex;gap:8px">
+      <a class="btn-csv" id="csv-link" href="#">EXPORTAR CSV</a>
+      <button class="btn-logout" id="btn-logout">SALIR</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">TOTAL INSCRIPTOS</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-hoy">0</div><div class="stat-label">HOY</div></div>
+  </div>
+  <input class="search-bar" type="text" id="search-bar" placeholder="Buscar por nombre, email o destino..." />
+  <table>
+    <thead><tr><th>#</th><th>NOMBRE</th><th>EMAIL</th><th>DESTINO</th><th>RELACION</th><th>BUTACA</th><th>FECHA</th><th></th></tr></thead>
+    <tbody id="tabla-body"></tbody>
+  </table>
+  <div class="no-results" id="no-results" style="display:none">Sin resultados.</div>
+</div>
+
+<div class="modal-overlay" id="ticket-modal">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close">X</button>
+    <div id="ticket-wrap"></div>
+    <div class="modal-actions"><button class="btn-print" id="btn-print">IMPRIMIR / CAPTURAR</button></div>
+  </div>
+</div>
+
+<script>
+var currentKey = '';
+var allRows = [];
+
+document.getElementById('btn-login').onclick = doLogin;
+document.getElementById('admin-key-input').onkeydown = function(e) { if (e.key === 'Enter') doLogin(); };
+document.getElementById('btn-logout').onclick = doLogout;
+document.getElementById('search-bar').oninput = function() { filterTable(this.value); };
+document.getElementById('modal-close').onclick = function() { document.getElementById('ticket-modal').classList.remove('show'); };
+document.getElementById('btn-print').onclick = imprimirTicket;
+document.getElementById('csv-link').onclick = function(e) { e.preventDefault(); descargarCSV(); };
+
+function doLogin() {
+  var key = document.getElementById('admin-key-input').value.trim();
+  if (!key) return;
+  fetch('/api/admin/lista', { headers: { 'x-admin-key': key } })
+    .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+    .then(function(data) {
+      currentKey = key;
+      allRows = data;
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('panel-section').style.display = 'block';
+      renderStats(data);
+      renderTable(data);
+    })
+    .catch(function() { document.getElementById('login-error').style.display = 'block'; });
+}
+
+function doLogout() {
+  currentKey = '';
+  allRows = [];
+  document.getElementById('login-section').style.display = 'flex';
+  document.getElementById('panel-section').style.display = 'none';
+  document.getElementById('admin-key-input').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function renderStats(data) {
+  document.getElementById('stat-total').textContent = data.length;
+  var hoy = new Date().toLocaleDateString('es-AR');
+  var c = data.filter(function(r) { return r.fecha && r.fecha.indexOf(hoy) === 0; }).length;
+  document.getElementById('stat-hoy').textContent = c;
+}
+
+function renderTable(data) {
+  var tbody = document.getElementById('tabla-body');
+  tbody.innerHTML = '';
+  document.getElementById('no-results').style.display = data.length === 0 ? 'block' : 'none';
+  data.forEach(function(r) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="id-col">' + r.id + '</td>' +
+      '<td>' + esc(r.nombre) + '</td>' +
+      '<td class="email-col">' + esc(r.email) + '</td>' +
+      '<td>' + esc(r.destino || '-') + '</td>' +
+      '<td>' + esc(r.motivo || '-') + '</td>' +
+      '<td class="butaca-col">' + esc(r.butaca) + '</td>' +
+      '<td class="fecha-col">' + esc(r.fecha) + '</td>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn-ticket" data-id="' + r.id + '">TICKET</button> ' +
+        '<button class="btn-del" data-id="' + r.id + '" data-nombre="' + esc(r.nombre) + '">BORRAR</button>' +
+      '</td>';
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('.btn-ticket').forEach(function(btn) {
+    btn.onclick = function() { verTicket(parseInt(this.getAttribute('data-id'))); };
+  });
+  tbody.querySelectorAll('.btn-del').forEach(function(btn) {
+    btn.onclick = function() { borrar(parseInt(this.getAttribute('data-id')), this.getAttribute('data-nombre')); };
+  });
+}
+
+function filterTable(q) {
+  q = q.toLowerCase();
+  renderTable(allRows.filter(function(r) {
+    return (r.nombre || '').toLowerCase().indexOf(q) >= 0 ||
+           (r.email || '').toLowerCase().indexOf(q) >= 0 ||
+           (r.destino || '').toLowerCase().indexOf(q) >= 0 ||
+           (r.motivo || '').toLowerCase().indexOf(q) >= 0;
+  }));
+}
+
+function borrar(id, nombre) {
+  if (!confirm('Borrar a ' + nombre + '? Esta accion no se puede deshacer.')) return;
+  fetch('/api/admin/borrar/' + id, { method: 'DELETE', headers: { 'x-admin-key': currentKey } })
+    .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+    .then(function() {
+      allRows = allRows.filter(function(r) { return r.id !== id; });
+      renderStats(allRows);
+      renderTable(allRows);
+    })
+    .catch(function() { alert('Error al borrar. Intenta de nuevo.'); });
+}
+
+function toIATA(destino) {
+  var map = {
+    'nueva york': 'JFK', 'new york': 'JFK', 'miami': 'MIA', 'madrid': 'MAD',
+    'barcelona': 'BCN', 'paris': 'CDG', 'london': 'LHR', 'londres': 'LHR',
+    'roma': 'FCO', 'tokio': 'NRT', 'tokyo': 'NRT', 'dubai': 'DXB',
+    'cancun': 'CUN', 'mexico': 'MEX', 'bogota': 'BOG', 'lima': 'LIM',
+    'santiago': 'SCL', 'montevideo': 'MVD', 'rio': 'GIG', 'brasil': 'GRU',
+    'davos': 'ZRH', 'suiza': 'ZRH', 'washington': 'DCA', 'los angeles': 'LAX',
+    'chicago': 'ORD', 'las vegas': 'LAS', 'caracas': 'CCS', 'manchester': 'MAN'
+  };
+  if (!destino) return 'XCM';
+  var d = destino.toLowerCase();
+  for (var k in map) { if (d.indexOf(k) >= 0) return map[k]; }
+  return destino.substring(0, 3).toUpperCase();
+}
+
+function verTicket(id) {
+  var r = allRows.find(function(x) { return x.id === id; });
+  if (!r) return;
+  var destino = r.destino || 'Cualquier lado';
+  var iata = toIATA(destino);
+  var pago = r.motivo ? (r.motivo.length > 40 ? r.motivo.substring(0, 40) + '...' : r.motivo) : 'TOTAL: NO CUESTA NADA';
+  var vuelo = 'T01-' + String(r.id).padStart(4, '0');
+  var bars = '||||||||||||||||||||||||||||||||||||||||||||||||||||';
+
+  var t = '';
+  t += '<div class="tk-header">';
+  t += '<div><div class="tk-airline">REPUBLICA ARGENTINA</div>';
+  t += '<div class="tk-logo">TANGO 01</div>';
+  t += '<div class="tk-airline">VUELO PRESIDENCIAL OFICIAL*</div></div>';
+  t += '<div style="font-size:28px">&#127462;&#127479;</div></div>';
+  t += '<div class="tk-route">';
+  t += '<div class="tk-city"><div class="tk-iata">EZE</div><div class="tk-cityname">BUENOS AIRES</div></div>';
+  t += '<div class="tk-arrow">&#9992;</div>';
+  t += '<div class="tk-city"><div class="tk-iata">' + iata + '</div><div class="tk-cityname">' + destino.toUpperCase().substring(0, 14) + '</div></div>';
+  t += '<div style="text-align:right"><div class="tk-seat-big">' + esc(r.butaca) + '</div>';
+  t += '<div style="font-size:9px;color:rgba(255,255,255,0.6);margin-top:4px;letter-spacing:1px">ASIENTO</div></div>';
+  t += '</div>';
+  t += '<div class="tk-body">';
+  t += '<div class="tk-row">';
+  t += '<div class="tk-field"><div class="tk-label">PASAJERO</div><div class="tk-value">' + r.nombre.toUpperCase() + '</div></div>';
+  t += '<div class="tk-field" style="text-align:right"><div class="tk-label">VUELO</div><div class="tk-value">' + vuelo + '</div></div>';
+  t += '</div>';
+  t += '<div class="tk-row">';
+  t += '<div class="tk-field"><div class="tk-label">FECHA</div><div class="tk-value">A CONFIRMAR</div></div>';
+  t += '<div class="tk-field" style="text-align:center"><div class="tk-label">CLASE</div><div class="tk-value">COSTO MARGINAL</div></div>';
+  t += '<div class="tk-field" style="text-align:right"><div class="tk-label">EMBARQUE</div><div class="tk-value">CUANDO HAYA LUGAR</div></div>';
+  t += '</div>';
+  t += '<div class="tk-row">';
+  t += '<div class="tk-field"><div class="tk-label">FORMA DE PAGO</div><div class="tk-value" style="font-size:12px">' + pago.toUpperCase() + '</div></div>';
+  t += '<div class="tk-field" style="text-align:right;padding-top:6px"><div class="tk-stamp">LISTA DE ESPERA</div></div>';
+  t += '</div></div>';
+  t += '<hr class="tk-divider">';
+  t += '<div class="tk-footer">';
+  t += '<div><div class="tk-barcode">' + bars + '</div>';
+  t += '<div style="font-size:9px;color:#aaa;letter-spacing:1px">' + vuelo + ' - ' + iata + ' - ' + esc(r.butaca) + '</div></div>';
+  t += '<div class="tk-disclaimer">*Este ticket es completamente simbolico. @tucostomarginal</div>';
+  t += '</div>';
+
+  document.getElementById('ticket-wrap').innerHTML = t;
+  document.getElementById('ticket-modal').classList.add('show');
+}
+
+function imprimirTicket() {
+  var contenido = document.getElementById('ticket-wrap').innerHTML;
+  var estilos = document.querySelector('style').innerHTML;
+  var win = window.open('', '_blank', 'width=620,height=520');
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket Tango 01</title>';
+  html += '<style>' + estilos + ' body{background:#fff;display:flex;justify-content:center;padding:20px;}';
+  html += '#ticket-wrap{max-width:520px;width:100%;} @media print{body{padding:0;}}</style></head>';
+  html += '<body><div id="ticket-wrap">' + contenido + '</div>';
+  html += '<script>window.onload=function(){window.print();};<' + '/script></body></html>';
+  win.document.write(html);
+  win.document.close();
+}
+
+function descargarCSV() {
+  fetch('/api/admin/export-csv', { headers: { 'x-admin-key': currentKey } })
+    .then(function(r) { return r.blob(); })
+    .then(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'tango01_inscriptos.csv';
+      a.click();
+    });
+}
+
+function esc(t) {
+  var s = String(t || '');
+  s = s.split('&').join('&amp;');
+  s = s.split('<').join('&lt;');
+  s = s.split('>').join('&gt;');
+  s = s.split('"').join('&quot;');
+  return s;
+}
+</script>
+</body>
+</html>
