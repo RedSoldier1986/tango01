@@ -221,6 +221,98 @@ app.get('/admin', (req, res) => {
   th { text-align:left; padding:10px 12px; background:#111; color:rgba(255,255,255,0.4); font-size:10px; letter-spacing:2px; border-bottom:1px solid rgba(255,255,255,0.07); }
   .btn-del { background:transparent; border:1px solid rgba(255,80,80,0.3); color:rgba(255,80,80,0.5); padding:4px 10px; font-family:monospace; font-size:11px; cursor:pointer; border-radius:2px; }
   .btn-del:hover { background:rgba(255,80,80,0.1); border-color:#ff5050; color:#ff5050; }
+  .btn-ticket { background:transparent; border:1px solid rgba(246,180,14,0.4); color:rgba(246,180,14,0.7); padding:4px 10px; font-family:monospace; font-size:11px; cursor:pointer; border-radius:2px; margin-right:4px; }
+  .btn-ticket:hover { background:rgba(246,180,14,0.1); border-color:#F6B40E; color:#F6B40E; }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.show { display:flex; }
+  .modal-box { background:#0a0a0a; border:1px solid rgba(255,255,255,0.1); padding:24px; max-width:520px; width:100%; position:relative; }
+  .modal-close { position:absolute; top:12px; right:14px; background:transparent; border:none; color:rgba(255,255,255,0.3); font-size:20px; cursor:pointer; width:auto; padding:0; }
+  .modal-close:hover { color:#fff; background:transparent; }
+  .modal-actions { display:flex; gap:10px; margin-top:16px; justify-content:center; }
+  .btn-print { background:#F6B40E; color:#000; border:none; padding:10px 24px; font-family:monospace; font-size:14px; font-weight:bold; letter-spacing:2px; cursor:pointer; width:auto; }
+  .btn-print:hover { background:#ffc82e; }
+
+  /* E-TICKET */
+  #ticket-render {
+    background:#fff;
+    color:#000;
+    font-family: 'Courier New', Courier, monospace;
+    width:100%;
+    padding:0;
+    user-select:none;
+  }
+  .tk-header {
+    background:#1a1a2e;
+    color:#fff;
+    padding:16px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .tk-airline { font-size:11px; letter-spacing:3px; color:rgba(255,255,255,0.5); }
+  .tk-logo { font-size:22px; font-weight:900; letter-spacing:2px; color:#fff; }
+  .tk-flag { font-size:28px; }
+  .tk-route {
+    background:#74ACDF;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .tk-city { text-align:center; }
+  .tk-iata { font-size:32px; font-weight:900; color:#fff; letter-spacing:1px; line-height:1; }
+  .tk-cityname { font-size:10px; color:rgba(255,255,255,0.7); letter-spacing:2px; margin-top:2px; }
+  .tk-arrow { font-size:28px; color:rgba(255,255,255,0.6); }
+  .tk-body { padding:16px 20px; background:#fff; }
+  .tk-row { display:flex; gap:0; border-bottom:1px dashed #ddd; padding:8px 0; }
+  .tk-row:last-child { border-bottom:none; }
+  .tk-field { flex:1; }
+  .tk-label { font-size:8px; letter-spacing:2px; color:#999; text-transform:uppercase; margin-bottom:2px; }
+  .tk-value { font-size:15px; font-weight:700; color:#1a1a2e; letter-spacing:0.5px; }
+  .tk-divider {
+    border:none;
+    border-top: 2px dashed #ccc;
+    margin:0;
+    position:relative;
+  }
+  .tk-divider::before {
+    content:'✂';
+    position:absolute;
+    left:-8px;
+    top:-10px;
+    color:#ccc;
+    font-size:14px;
+  }
+  .tk-footer {
+    background:#f5f5f5;
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .tk-barcode { font-size:32px; letter-spacing:-2px; color:#1a1a2e; font-weight:900; }
+  .tk-disclaimer { font-size:8px; color:#aaa; max-width:200px; text-align:right; line-height:1.4; }
+  .tk-seat-big {
+    background:#F6B40E;
+    color:#000;
+    font-size:28px;
+    font-weight:900;
+    padding:4px 14px;
+    letter-spacing:1px;
+  }
+  .tk-stamp {
+    display:inline-block;
+    border:3px solid #74ACDF;
+    color:#74ACDF;
+    font-size:10px;
+    letter-spacing:3px;
+    padding:4px 10px;
+    transform:rotate(-8deg);
+    font-weight:900;
+  }
   td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,0.05); vertical-align:top; }
   tr:hover td { background:rgba(116,172,223,0.04); }
   .id-col { color:rgba(255,255,255,0.2); }
@@ -270,6 +362,17 @@ app.get('/admin', (req, res) => {
     <tbody id="tabla-body"></tbody>
   </table>
   <div class="no-results" id="no-results" style="display:none">Sin resultados.</div>
+</div>
+
+<!-- TICKET MODAL -->
+<div class="modal-overlay" id="ticket-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="cerrarTicket()">✕</button>
+    <div id="ticket-render"></div>
+    <div class="modal-actions">
+      <button class="btn-print" onclick="imprimirTicket()">📸 CAPTURAR / IMPRIMIR</button>
+    </div>
+  </div>
 </div>
 <script>
   let currentKey = '';
@@ -322,7 +425,7 @@ app.get('/admin', (req, res) => {
     document.getElementById('no-results').style.display = data.length === 0 ? 'block' : 'none';
     data.forEach(r => {
       const tr = document.createElement('tr');
-      tr.innerHTML = \`<td class="id-col">\${r.id}</td><td>\${esc(r.nombre)}</td><td class="email-col">\${esc(r.email)}</td><td>\${esc(r.destino||'—')}</td><td>\${esc(r.motivo||'—')}</td><td class="butaca-col">\${esc(r.butaca)}</td><td class="fecha-col">\${esc(r.fecha)}</td><td><button class="btn-del" onclick="borrar(\${r.id}, '\${esc(r.nombre)}')">✕ BORRAR</button></td>\`;
+      tr.innerHTML = \`<td class="id-col">\${r.id}</td><td>\${esc(r.nombre)}</td><td class="email-col">\${esc(r.email)}</td><td>\${esc(r.destino||'—')}</td><td>\${esc(r.motivo||'—')}</td><td class="butaca-col">\${esc(r.butaca)}</td><td class="fecha-col">\${esc(r.fecha)}</td><td style="white-space:nowrap"><button class="btn-ticket" onclick="verTicket(\${r.id})">🎫 TICKET</button><button class="btn-del" onclick="borrar(\${r.id}, '\${esc(r.nombre)}')">✕ BORRAR</button></td>\`;
       tbody.appendChild(tr);
     });
   }
@@ -337,7 +440,173 @@ app.get('/admin', (req, res) => {
     ));
   }
 
-  function borrar(id, nombre) {
+  function toIATA(destino) {
+    const map = {
+      'nueva york':'JFK','new york':'JFK','york':'JFK',
+      'miami':'MIA','miami beach':'MIA',
+      'madrid':'MAD','barcelona':'BCN','españa':'MAD',
+      'paris':'CDG','france':'CDG','francia':'CDG',
+      'london':'LHR','londres':'LHR',
+      'roma':'FCO','rome':'FCO','italia':'FCO',
+      'tokio':'NRT','tokyo':'NRT','japon':'NRT',
+      'dubai':'DXB','abu dhabi':'AUH',
+      'cancun':'CUN','mexico':'MEX','ciudad de mexico':'MEX',
+      'bogota':'BOG','colombia':'BOG',
+      'lima':'LIM','peru':'LIM',
+      'santiago':'SCL','chile':'SCL',
+      'montevideo':'MVD','uruguay':'MVD',
+      'rio':'GIG','rio de janeiro':'GIG','brasil':'GRU','san pablo':'GRU',
+      'davos':'ZRH','suiza':'ZRH','ginebra':'GVA',
+      'washington':'DCA','los angeles':'LAX','chicago':'ORD',
+      'las vegas':'LAS','houston':'IAH','dallas':'DFW',
+      'caracas':'CCS','venezuela':'CCS',
+      'la habana':'HAV','cuba':'HAV',
+      'beijing':'PEK','china':'PEK','shanghai':'PVG',
+      'moscu':'SVO','rusia':'SVO',
+      'manchester':'MAN','liverpool':'LPL',
+    };
+    if (!destino) return 'XCM';
+    const d = destino.toLowerCase();
+    for (const k in map) { if (d.includes(k)) return map[k]; }
+    return destino.substring(0,3).toUpperCase();
+  }
+
+  function verTicket(id) {
+    const r = allRows.find(x => x.id === id);
+    if (!r) return;
+
+    const destino = r.destino || 'Cualquier lado';
+    const iata = toIATA(destino);
+    const pago = r.motivo
+      ? r.motivo.length > 40 ? r.motivo.substring(0,40)+'...' : r.motivo
+      : 'TOTAL: NO CUESTA NADA';
+    const fechaVuelo = 'A CONFIRMAR';
+    const vuelo = 'T01-' + String(r.id).padStart(4,'0');
+    const barcodeChars = '|||||||||||||||||||||||||||||||||||||||||||||||||||||';
+
+    document.getElementById('ticket-render').innerHTML = \`
+      <div id="ticket-render">
+        <div class="tk-header">
+          <div>
+            <div class="tk-airline">REPÚBLICA ARGENTINA</div>
+            <div class="tk-logo">✈ TANGO 01</div>
+            <div class="tk-airline" style="margin-top:2px">VUELO PRESIDENCIAL OFICIAL*</div>
+          </div>
+          <div class="tk-flag">🇦🇷</div>
+        </div>
+
+        <div class="tk-route">
+          <div class="tk-city">
+            <div class="tk-iata">EZE</div>
+            <div class="tk-cityname">BUENOS AIRES</div>
+          </div>
+          <div class="tk-arrow">✈</div>
+          <div class="tk-city">
+            <div class="tk-iata">\${iata}</div>
+            <div class="tk-cityname">\${destino.toUpperCase().substring(0,14)}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="tk-seat-big">\${r.butaca}</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.6);margin-top:4px;letter-spacing:1px">ASIENTO</div>
+          </div>
+        </div>
+
+        <div class="tk-body">
+          <div class="tk-row">
+            <div class="tk-field">
+              <div class="tk-label">PASAJERO</div>
+              <div class="tk-value">\${r.nombre.toUpperCase()}</div>
+            </div>
+            <div class="tk-field" style="text-align:right">
+              <div class="tk-label">VUELO</div>
+              <div class="tk-value">\${vuelo}</div>
+            </div>
+          </div>
+          <div class="tk-row">
+            <div class="tk-field">
+              <div class="tk-label">FECHA</div>
+              <div class="tk-value">\${fechaVuelo}</div>
+            </div>
+            <div class="tk-field" style="text-align:center">
+              <div class="tk-label">CLASE</div>
+              <div class="tk-value">COSTO MARGINAL</div>
+            </div>
+            <div class="tk-field" style="text-align:right">
+              <div class="tk-label">EMBARQUE</div>
+              <div class="tk-value">CUANDO HAYA LUGAR</div>
+            </div>
+          </div>
+          <div class="tk-row">
+            <div class="tk-field">
+              <div class="tk-label">FORMA DE PAGO</div>
+              <div class="tk-value" style="font-size:13px">\${pago.toUpperCase()}</div>
+            </div>
+            <div class="tk-field" style="text-align:right;padding-top:4px">
+              <div class="tk-stamp">LISTA DE ESPERA</div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="tk-divider">
+
+        <div class="tk-footer">
+          <div>
+            <div class="tk-barcode">\${barcodeChars}</div>
+            <div style="font-size:9px;color:#aaa;letter-spacing:1px">\${vuelo} · \${iata} · \${r.butaca}</div>
+          </div>
+          <div class="tk-disclaimer">
+            *Este ticket es completamente simbólico. El Estado no se hace responsable de esperanzas incumplidas. @tucostomarginal
+          </div>
+        </div>
+      </div>
+    \`;
+
+    document.getElementById('ticket-modal').classList.add('show');
+  }
+
+  function cerrarTicket() {
+    document.getElementById('ticket-modal').classList.remove('show');
+  }
+
+  function imprimirTicket() {
+    const contenido = document.getElementById('ticket-render').outerHTML;
+    const ventana = window.open('', '_blank', 'width=600,height=500');
+    ventana.document.write(\`
+      <!DOCTYPE html><html><head>
+      <meta charset="UTF-8">
+      <title>E-Ticket Tango 01</title>
+      <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#fff; display:flex; justify-content:center; padding:20px; }
+        .tk-header { background:#1a1a2e; color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; }
+        .tk-airline { font-size:11px; letter-spacing:3px; color:rgba(255,255,255,0.5); font-family:monospace; }
+        .tk-logo { font-size:22px; font-weight:900; letter-spacing:2px; color:#fff; font-family:monospace; }
+        .tk-flag { font-size:28px; }
+        .tk-route { background:#74ACDF; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:8px; font-family:monospace; }
+        .tk-city { text-align:center; }
+        .tk-iata { font-size:32px; font-weight:900; color:#fff; letter-spacing:1px; line-height:1; }
+        .tk-cityname { font-size:10px; color:rgba(255,255,255,0.7); letter-spacing:2px; margin-top:2px; }
+        .tk-arrow { font-size:28px; color:rgba(255,255,255,0.6); }
+        .tk-body { padding:16px 20px; background:#fff; font-family:monospace; }
+        .tk-row { display:flex; gap:0; border-bottom:1px dashed #ddd; padding:8px 0; }
+        .tk-row:last-child { border-bottom:none; }
+        .tk-field { flex:1; }
+        .tk-label { font-size:8px; letter-spacing:2px; color:#999; text-transform:uppercase; margin-bottom:2px; }
+        .tk-value { font-size:15px; font-weight:700; color:#1a1a2e; letter-spacing:0.5px; }
+        .tk-divider { border:none; border-top:2px dashed #ccc; margin:0; position:relative; }
+        .tk-divider::before { content:'✂'; position:absolute; left:-8px; top:-10px; color:#ccc; font-size:14px; }
+        .tk-footer { background:#f5f5f5; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; font-family:monospace; }
+        .tk-barcode { font-size:32px; letter-spacing:-2px; color:#1a1a2e; font-weight:900; }
+        .tk-disclaimer { font-size:8px; color:#aaa; max-width:200px; text-align:right; line-height:1.4; }
+        .tk-seat-big { background:#F6B40E; color:#000; font-size:28px; font-weight:900; padding:4px 14px; letter-spacing:1px; }
+        .tk-stamp { display:inline-block; border:3px solid #74ACDF; color:#74ACDF; font-size:10px; letter-spacing:3px; padding:4px 10px; transform:rotate(-8deg); font-weight:900; font-family:monospace; }
+        #ticket-render { max-width:520px; width:100%; }
+        @media print { body { padding:0; } }
+      </style>
+      </head><body>\${contenido}<script>window.onload=()=>window.print()<\/script></body></html>
+    \`);
+    ventana.document.close();
+  }
     if (!confirm('¿Borrar a ' + nombre + '? Esta acción no se puede deshacer.')) return;
     fetch('/api/admin/borrar/' + id, {
       method: 'DELETE',
